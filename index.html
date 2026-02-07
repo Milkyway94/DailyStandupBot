@@ -107,6 +107,28 @@
             display: none;
         }
 
+        .submit-button {
+            width: 100%;
+            padding: 15px;
+            background: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: opacity 0.2s;
+        }
+
+        .submit-button:hover {
+            opacity: 0.9;
+        }
+
+        .submit-button:active {
+            opacity: 0.7;
+        }
+
         .success-message {
             position: fixed;
             top: 50%;
@@ -202,6 +224,10 @@
             ></textarea>
             <div class="hint">Để trống nếu không có vướng mắc</div>
         </div>
+
+        <button type="submit" class="submit-button" id="submitButton">
+            📝 Gửi báo cáo
+        </button>
     </form>
 
     <div class="success-message" id="successMessage">
@@ -248,11 +274,15 @@
             return isValid;
         }
 
-        // Handle main button click
-        tg.MainButton.onClick(function() {
+        // Handle form submission
+        function handleSubmit(e) {
+            if (e) e.preventDefault();
+            
             if (!validateForm()) {
-                tg.HapticFeedback.notificationOccurred('error');
-                return;
+                if (tg && tg.HapticFeedback) {
+                    tg.HapticFeedback.notificationOccurred('error');
+                }
+                return false;
             }
 
             const formData = {
@@ -263,19 +293,39 @@
             };
 
             // Haptic feedback
-            tg.HapticFeedback.notificationOccurred('success');
+            if (tg && tg.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
 
             // Show success message
             document.getElementById('successMessage').style.display = 'block';
 
-            // Send data back to bot
-            tg.sendData(JSON.stringify(formData));
+            // Send data back to bot if in Telegram
+            if (tg && tg.sendData) {
+                tg.sendData(JSON.stringify(formData));
+                // Close after delay
+                setTimeout(() => {
+                    tg.close();
+                }, 1000);
+            } else {
+                // Not in Telegram - just show message
+                setTimeout(() => {
+                    document.getElementById('successMessage').style.display = 'none';
+                    document.getElementById('standupForm').reset();
+                    alert('Form submitted! (Demo mode - data not sent to bot)');
+                }, 1500);
+            }
 
-            // Close after delay
-            setTimeout(() => {
-                tg.close();
-            }, 1000);
-        });
+            return false;
+        }
+
+        // Handle Telegram main button click
+        if (tg && tg.MainButton) {
+            tg.MainButton.onClick(handleSubmit);
+        }
+
+        // Handle HTML form submit
+        document.getElementById('standupForm').addEventListener('submit', handleSubmit);
 
         // Enable back button
         tg.BackButton.show();
