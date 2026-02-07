@@ -171,6 +171,36 @@
     <form id="standupForm">
         <div class="form-group">
             <label>
+                <span class="label-number">📅</span>
+                Ngày
+            </label>
+            <input 
+                type="date" 
+                id="date" 
+                name="date" 
+                required
+                style="width: 100%; padding: 12px; border: 1px solid var(--tg-theme-hint-color, #ddd); border-radius: 8px; font-size: 15px; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000);"
+            />
+        </div>
+
+        <div class="form-group">
+            <label>
+                <span class="label-number">📁</span>
+                Dự án
+            </label>
+            <input 
+                type="text" 
+                id="project" 
+                name="project" 
+                placeholder="FS.XLite.Develop"
+                required
+                readonly
+                style="width: 100%; padding: 12px; border: 1px solid var(--tg-theme-hint-color, #ddd); border-radius: 8px; font-size: 15px; background: var(--tg-theme-secondary-bg-color, #f0f0f0); color: var(--tg-theme-text-color, #000000);"
+            />
+            <div class="hint">Tự động từ nhóm Telegram</div>
+        </div>
+        <div class="form-group">
+            <label>
                 <span class="label-number">1</span>
                 Hôm trước bạn làm các công việc gì?
             </label>
@@ -251,6 +281,17 @@
         if (tg && tg.expand) {
             tg.expand();
         }
+
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
+
+        // Set project from Telegram chat info
+        let projectName = 'FS.XLite.Develop'; // Default
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.chat) {
+            projectName = tg.initDataUnsafe.chat.title || projectName;
+        }
+        document.getElementById('project').value = projectName;
         
         // Enable main button (only in Telegram)
         if (tg && tg.MainButton) {
@@ -300,10 +341,13 @@
             }
 
             const formData = {
+                date: document.getElementById('date').value,
+                project: document.getElementById('project').value,
                 yesterday: document.getElementById('yesterday').value.trim(),
                 today: document.getElementById('today').value.trim(),
                 ontrack: document.querySelector('input[name="ontrack"]:checked').value,
-                blockers: document.getElementById('blockers').value.trim() || 'Không có'
+                blockers: document.getElementById('blockers').value.trim() || 'Không có',
+                user: tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name + ' ' + (tg.initDataUnsafe.user.last_name || '') : 'Unknown'
             };
 
             // Haptic feedback
