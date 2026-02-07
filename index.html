@@ -266,7 +266,6 @@
                     // 2. Webhook listener (post to Telegram)
                     fetch('https://web-production-3287b.up.railway.app/', {
                         method: 'POST',
-                        mode: 'no-cors',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(formData)
                     }).catch(err => {
