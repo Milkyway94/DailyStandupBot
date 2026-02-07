@@ -254,15 +254,26 @@
             };
             
             try {
-                // Send to Google Apps Script (save to Sheets)
-                const response = await fetch('https://script.google.com/macros/s/AKfycbxk0Uq1_FA5WaHFYXuYf2Z17IIuJD9EjZ37vmLjPDa9xHdZku4mJWU5TaRSIdHHNeII/exec', {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(formData)
-                });
+                // Send to both endpoints in parallel
+                const promises = [
+                    // 1. Google Apps Script (save to Sheets)
+                    fetch('https://script.google.com/macros/s/AKfycbxk0Uq1_FA5WaHFYXuYf2Z17IIuJD9EjZ37vmLjPDa9xHdZku4mJWU5TaRSIdHHNeII/exec', {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(formData)
+                    }),
+                    // 2. Webhook listener (post to Telegram)
+                    fetch('https://smart-eels-boil.loca.lt', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(formData)
+                    })
+                ];
                 
-                // With no-cors mode, assume success if no error thrown
+                await Promise.allSettled(promises);
+                
+                // Show success
                 document.getElementById('successMessage').style.display = 'block';
                 setTimeout(() => {
                     if (tg && tg.close) {
