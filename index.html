@@ -147,6 +147,14 @@
     <form id="standupForm">
         <div class="form-group">
             <label>
+                <span class="label-number">👤</span>
+                Họ tên
+            </label>
+            <input type="text" id="userName" name="userName" placeholder="Nhập họ tên của bạn" required />
+        </div>
+
+        <div class="form-group">
+            <label>
                 <span class="label-number">📅</span>
                 Ngày
             </label>
@@ -218,11 +226,13 @@
         // Set default date
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
         
-        // Get user name from Telegram if available
-        let userName = 'Unknown';
+        // Auto-fill user name from Telegram if available
         if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
             const user = tg.initDataUnsafe.user;
-            userName = (user.first_name + ' ' + (user.last_name || '')).trim();
+            const userName = (user.first_name + ' ' + (user.last_name || '')).trim();
+            if (userName) {
+                document.getElementById('userName').value = userName;
+            }
         }
         
         // Handle form submit
@@ -234,7 +244,7 @@
             submitBtn.textContent = '⏳ Đang gửi...';
             
             const formData = {
-                user: userName,
+                user: document.getElementById('userName').value.trim(),
                 date: document.getElementById('date').value,
                 project: document.getElementById('project').value,
                 yesterday: document.getElementById('yesterday').value.trim(),
