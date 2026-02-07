@@ -121,6 +121,11 @@
             transition: opacity 0.2s;
         }
 
+        /* Hide HTML button when in Telegram Web App */
+        .in-telegram .submit-button {
+            display: none;
+        }
+
         .submit-button:hover {
             opacity: 0.9;
         }
@@ -237,13 +242,22 @@
     <script>
         const tg = window.Telegram.WebApp;
         
-        // Expand web app
-        tg.expand();
+        // Detect if running in Telegram
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            document.body.classList.add('in-telegram');
+        }
         
-        // Enable main button
-        tg.MainButton.setText('Gửi báo cáo');
-        tg.MainButton.show();
-        tg.MainButton.enable();
+        // Expand web app
+        if (tg && tg.expand) {
+            tg.expand();
+        }
+        
+        // Enable main button (only in Telegram)
+        if (tg && tg.MainButton) {
+            tg.MainButton.setText('Gửi báo cáo');
+            tg.MainButton.show();
+            tg.MainButton.enable();
+        }
 
         // Form validation
         function validateForm() {
@@ -327,11 +341,13 @@
         // Handle HTML form submit
         document.getElementById('standupForm').addEventListener('submit', handleSubmit);
 
-        // Enable back button
-        tg.BackButton.show();
-        tg.BackButton.onClick(function() {
-            tg.close();
-        });
+        // Enable back button (only in Telegram)
+        if (tg && tg.BackButton) {
+            tg.BackButton.show();
+            tg.BackButton.onClick(function() {
+                tg.close();
+            });
+        }
 
         // Set theme colors
         document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
@@ -341,7 +357,9 @@
         document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
 
         // Ready
-        tg.ready();
+        if (tg && tg.ready) {
+            tg.ready();
+        }
     </script>
 </body>
 </html>
