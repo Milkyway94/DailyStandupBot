@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Standup Report</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .subtitle {
+            color: var(--tg-theme-hint-color, #999);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .label-number {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--tg-theme-hint-color, #ddd);
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color, #3390ec);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .hint {
+            font-size: 13px;
+            color: var(--tg-theme-hint-color, #999);
+            margin-top: 5px;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 15px;
+            background: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .submit-button:hover {
+            opacity: 0.9;
+        }
+
+        .submit-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <h1>📋 Daily Standup Report</h1>
+    <p class="subtitle">Điền báo cáo hàng ngày của bạn</p>
+
+    <form id="standupForm">
+        <div class="form-group">
+            <label>
+                <span class="label-number">👤</span>
+                Họ tên
+            </label>
+            <input type="text" id="userName" name="userName" placeholder="Nhập họ tên của bạn" required />
+        </div>
+
+        <div class="form-group">
+            <label>
+                <span class="label-number">📅</span>
+                Ngày
+            </label>
+            <input type="date" id="date" name="date" required />
+        </div>
+
+        <div class="form-group">
+            <label>
+                <span class="label-number">📁</span>
+                Dự án
+            </label>
+            <input type="text" id="project" name="project" value="FS.XLite.Develop" required readonly style="background: #f0f0f0;" />
+        </div>
+
+        <div class="form-group">
+            <label>
+                <span class="label-number">1</span>
+                Hôm trước bạn làm các công việc gì?
+            </label>
+            <textarea id="yesterday" name="yesterday" placeholder="Liệt kê các tasks đã hoàn thành..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <span class="label-number">2</span>
+                Hôm nay bạn làm gì?
+            </label>
+            <textarea id="today" name="today" placeholder="Kế hoạch công việc hôm nay..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <span class="label-number">3</span>
+                Bạn có đang theo đúng tiến độ không?
+            </label>
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="ontrack-yes" name="ontrack" value="yes" required>
+                    <label for="ontrack-yes" style="margin: 0; font-weight: normal;">✅ Đúng tiến độ</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="ontrack-no" name="ontrack" value="no">
+                    <label for="ontrack-no" style="margin: 0; font-weight: normal;">⚠️ Chậm tiến độ</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <span class="label-number">4</span>
+                Có vướng mắc gì không?
+            </label>
+            <textarea id="blockers" name="blockers" placeholder="Nếu có, hãy trình bày chi tiết..."></textarea>
+            <div class="hint">Để trống nếu không có vướng mắc</div>
+        </div>
+
+        <button type="submit" class="submit-button" id="submitButton">
+            📝 Gửi báo cáo
+        </button>
+    </form>
+
+    <div class="success-message" id="successMessage">
+        ✅ Đã gửi báo cáo thành công!
+    </div>
+
+    <script>
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
+        
+        // Set default date
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        
+        // Auto-fill user name from Telegram if available
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const user = tg.initDataUnsafe.user;
+            const userName = (user.first_name + ' ' + (user.last_name || '')).trim();
+            if (userName) {
+                document.getElementById('userName').value = userName;
+            }
+        }
+        
+        // Handle form submit
+        document.getElementById('standupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitButton');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Đang gửi...';
+            
+            const formData = {
+                user: document.getElementById('userName').value.trim(),
+                date: document.getElementById('date').value,
+                project: document.getElementById('project').value,
+                yesterday: document.getElementById('yesterday').value.trim(),
+                today: document.getElementById('today').value.trim(),
+                ontrack: document.querySelector('input[name="ontrack"]:checked').value,
+                blockers: document.getElementById('blockers').value.trim() || 'Không có'
+            };
+            
+            try {
+                // Send to both endpoints in parallel
+                const promises = [
+                    // 1. Google Apps Script (save to Sheets)
+                    fetch('https://script.google.com/macros/s/AKfycbxk0Uq1_FA5WaHFYXuYf2Z17IIuJD9EjZ37vmLjPDa9xHdZku4mJWU5TaRSIdHHNeII/exec', {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(formData)
+                    }),
+                    // 2. Webhook listener (post to Telegram)
+                    fetch('https://web-production-3287b.up.railway.app/', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(formData)
+                    }).catch(err => {
+                        console.warn('Webhook call issue:', err);
+                        return null;
+                    })
+                ];
+                
+                await Promise.allSettled(promises);
+                
+                // Show success
+                document.getElementById('successMessage').style.display = 'block';
+                setTimeout(() => {
+                    if (tg && tg.close) {
+                        tg.close();
+                    } else {
+                        document.getElementById('successMessage').style.display = 'none';
+                        document.getElementById('standupForm').reset();
+                        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                    }
+                }, 1500);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Có lỗi xảy ra. Vui lòng thử lại!');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📝 Gửi báo cáo';
+            }
+        });
+    </script>
+</body>
+</html>

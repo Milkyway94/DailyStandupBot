@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Standup Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .filter {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter label {
+            font-weight: 600;
+        }
+
+        .filter input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .filter button {
+            padding: 8px 16px;
+            background: #3390ec;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .filter button:hover {
+            background: #2980d9;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+
+        .user-list {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            overflow-y: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .user-item {
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+
+        .user-item:hover {
+            background: #f0f0f0;
+        }
+
+        .user-item.active {
+            background: #3390ec;
+            color: white;
+        }
+
+        .user-item .name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .user-item .time {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .report-detail {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            overflow-y: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .report-detail h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .report-section {
+            margin-bottom: 25px;
+        }
+
+        .report-section .label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .report-section .content {
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            white-space: pre-wrap;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-yes {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-no {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Daily Standup Dashboard</h1>
+        <div class="filter">
+            <label>📅 Ngày:</label>
+            <input type="date" id="dateFilter" />
+            <button onclick="loadReports()">Xem báo cáo</button>
+            <span id="stats" style="margin-left: auto; color: #666;"></span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="user-list" id="userList">
+            <div class="loading">Đang tải...</div>
+        </div>
+
+        <div class="report-detail" id="reportDetail">
+            <div class="empty-state">
+                <div class="icon">📝</div>
+                <p>Chọn một báo cáo từ danh sách bên trái</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = '1csOtoqO4sOXqq5IuSvGeD9kSSYD9Poj8u66xbllXbHc';
+        const API_KEY = 'AIzaSyDlvOp5YQm8TX9fPfFLX7WqzGzJ8VYoRzU'; // Public API key (anh cần tạo)
+        
+        let allReports = [];
+        
+        // Set default date to today
+        document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+        
+        async function loadReports() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            document.getElementById('userList').innerHTML = '<div class="loading">Đang tải...</div>';
+            document.getElementById('reportDetail').innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>Đang tải dữ liệu...</p></div>';
+            
+            try {
+                // Load from Google Sheets
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A2:H?key=${API_KEY}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (!data.values || data.values.length === 0) {
+                    document.getElementById('userList').innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Chưa có báo cáo nào</p></div>';
+                    return;
+                }
+                
+                // Parse and filter
+                allReports = data.values.map(row => ({
+                    timestamp: row[0],
+                    user: row[1],
+                    date: row[2],
+                    project: row[3],
+                    yesterday: row[4],
+                    today: row[5],
+                    ontrack: row[6],
+                    blockers: row[7]
+                })).filter(r => r.date === dateFilter);
+                
+                displayUserList();
+                
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                document.getElementById('userList').innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Lỗi khi tải dữ liệu</p></div>';
+            }
+        }
+        
+        function displayUserList() {
+            const userListEl = document.getElementById('userList');
+            
+            if (allReports.length === 0) {
+                userListEl.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Không có báo cáo nào</p></div>';
+                document.getElementById('stats').textContent = '';
+                return;
+            }
+            
+            document.getElementById('stats').textContent = `${allReports.length} báo cáo`;
+            
+            userListEl.innerHTML = allReports.map((report, index) => {
+                const time = new Date(report.timestamp).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'});
+                return `
+                    <div class="user-item" onclick="showReport(${index})">
+                        <div class="name">${report.user}</div>
+                        <div class="time">⏰ ${time}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function showReport(index) {
+            const report = allReports[index];
+            
+            // Highlight selected
+            document.querySelectorAll('.user-item').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+            
+            const statusClass = report.ontrack === 'yes' ? 'status-yes' : 'status-no';
+            const statusText = report.ontrack === 'yes' ? '✅ Đúng tiến độ' : '⚠️ Chậm tiến độ';
+            
+            document.getElementById('reportDetail').innerHTML = `
+                <h2>📊 Báo cáo của ${report.user}</h2>
+                
+                <div class="report-section">
+                    <div class="label">📅 Ngày</div>
+                    <div class="content">${report.date}</div>
+                </div>
+                
+                <div class="report-section">
+                    <div class="label">📁 Dự án</div>
+                    <div class="content">${report.project}</div>
+                </div>
+                
+                <div class="report-section">
+                    <div class="label">1️⃣ Hôm trước làm gì?</div>
+                    <div class="content">${report.yesterday}</div>
+                </div>
+                
+                <div class="report-section">
+                    <div class="label">2️⃣ Hôm nay làm gì?</div>
+                    <div class="content">${report.today}</div>
+                </div>
+                
+                <div class="report-section">
+                    <div class="label">3️⃣ Tiến độ</div>
+                    <div class="content">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+                
+                <div class="report-section">
+                    <div class="label">4️⃣ Vướng mắc</div>
+                    <div class="content">${report.blockers}</div>
+                </div>
+                
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #f0f0f0; color: #999; font-size: 13px;">
+                    ⏰ Gửi lúc ${new Date(report.timestamp).toLocaleString('vi-VN')}
+                </div>
+            `;
+        }
+        
+        // Load on page load
+        loadReports();
+    </script>
+</body>
+</html>
