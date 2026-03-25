@@ -149,10 +149,15 @@
     </div>
 
     <script>
-        const API_URL = 'https://multi-project-standup-api-production.up.railway.app';
+        // Updated to use direct webhook endpoint (production server)
+        const WEBHOOK_URL = 'http://160.250.64.236:8765';
         
-        let projectConfig = null;
         let projectId = null;
+        const projectNames = {
+            'xlite': 'FS.XLite.Develop',
+            'apecfinance': 'ApecFinance',
+            'ai-development': 'FS.AI.Development'
+        };
 
         // Get project from URL parameter
         function getProjectFromURL() {
@@ -160,32 +165,19 @@
             return params.get('project') || 'xlite'; // Default to xlite
         }
 
-        // Load project configuration
-        async function loadProjectConfig() {
+        // Initialize form
+        function initializeForm() {
             projectId = getProjectFromURL();
             
-            try {
-                const response = await fetch(`${API_URL}/api/project-config?project=${projectId}`);
-                
-                if (!response.ok) {
-                    throw new Error(`Project '${projectId}' not found`);
-                }
-                
-                projectConfig = await response.json();
-                
-                // Update UI
-                document.getElementById('projectName').textContent = `📋 ${projectConfig.project_name}`;
-                document.getElementById('projectDate').textContent = new Date().toLocaleDateString('vi-VN');
-                document.getElementById('date').valueAsDate = new Date();
-                
-                // Show form
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('formContainer').style.display = 'block';
-            } catch (error) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').textContent = `❌ Lỗi: ${error.message}`;
-                document.getElementById('error').style.display = 'block';
-            }
+            // Update UI
+            const projectName = projectNames[projectId] || projectId;
+            document.getElementById('projectName').textContent = `📋 ${projectName}`;
+            document.getElementById('projectDate').textContent = new Date().toLocaleDateString('vi-VN');
+            document.getElementById('date').valueAsDate = new Date();
+            
+            // Show form
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('formContainer').style.display = 'block';
         }
 
         // Submit form
@@ -198,16 +190,16 @@
             
             const formData = {
                 project: projectId,
-                name: document.getElementById('name').value,
+                user: document.getElementById('name').value,
                 date: document.getElementById('date').value,
                 yesterday: document.getElementById('yesterday').value,
                 today: document.getElementById('today').value,
-                onTrack: document.querySelector('input[name="onTrack"]:checked').value,
+                ontrack: document.querySelector('input[name="onTrack"]:checked').value === 'Đúng' ? 'yes' : 'no',
                 blockers: document.getElementById('blockers').value || 'Không có'
             };
             
             try {
-                const response = await fetch(`${API_URL}/api/submit-standup`, {
+                const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -217,12 +209,12 @@
                 
                 const result = await response.json();
                 
-                if (result.success) {
+                if (result.ok) {
                     alert('✅ Đã gửi báo cáo thành công!');
                     this.reset();
                     document.getElementById('date').valueAsDate = new Date();
                 } else {
-                    throw new Error(result.error || 'Unknown error');
+                    throw new Error(result.error || result.message || 'Unknown error');
                 }
             } catch (error) {
                 alert(`❌ Lỗi: ${error.message}`);
@@ -233,7 +225,7 @@
         });
 
         // Initialize
-        loadProjectConfig();
+        initializeForm();
     </script>
 </body>
 </html>
